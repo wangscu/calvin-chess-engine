@@ -8,10 +8,6 @@ import com.kelseyde.calvin.board.Bits.Square;
  */
 public class ChineseAttacks {
 
-    // 棋盘常量
-    public static final int BOARD_WIDTH = 9;
-    public static final int BOARD_HEIGHT = 10;
-
     // Magic数据结构
     public static class MagicEntry {
 
@@ -46,19 +42,19 @@ public class ChineseAttacks {
 
     // 位置工具方法
     public static int rank(int square) {
-        return square / BOARD_WIDTH;
+        return Bits.Rank.of(square);
     }
 
     public static int file(int square) {
-        return square % BOARD_WIDTH;
+        return Bits.File.of(square);
     }
 
     public static int square(int rank, int file) {
-        return rank * BOARD_WIDTH + file;
+        return Bits.Square.of(rank, file);
     }
 
     public static boolean inBoard(int rank, int file) {
-        return rank >= 0 && rank < BOARD_HEIGHT && file >= 0 && file < BOARD_WIDTH;
+        return rank >= 0 && rank < Square.RANK_COUNT && file >= 0 && file < Square.FILE_COUNT;
     }
 
     public static boolean inPalace(int square) {
@@ -214,14 +210,14 @@ public class ChineseAttacks {
         int file = file(square);
 
         // 横向掩码（去除边界）
-        for (int f = 1; f < BOARD_WIDTH - 1; f++) {
+        for (int f = 1; f < Square.FILE_COUNT - 1; f++) {
             if (f != file) {
                 mask = Bits.or(mask, Bits.of(square(rank, f)));
             }
         }
 
         // 纵向掩码（去除边界）
-        for (int r = 1; r < BOARD_HEIGHT - 1; r++) {
+        for (int r = 1; r < Square.RANK_COUNT - 1; r++) {
             if (r != rank) {
                 mask = Bits.or(mask, Bits.of(square(r, file)));
             }
@@ -301,7 +297,7 @@ public class ChineseAttacks {
         // 遍历四个方向
         for (int[] dir : directions) {
             // 在当前方向上遍历棋盘
-            for (int i = 1; i < Math.max(BOARD_WIDTH, BOARD_HEIGHT); i++) {
+            for (int i = 1; i < Math.max(Square.FILE_COUNT, Square.RANK_COUNT); i++) {
                 int newRank = rank + dir[0] * i;
                 int newFile = file + dir[1] * i;
 
@@ -348,7 +344,7 @@ public class ChineseAttacks {
             boolean foundFirst = false;
 
             // 在当前方向上遍历棋盘
-            for (int i = 1; i < Math.max(BOARD_WIDTH, BOARD_HEIGHT); i++) {
+            for (int i = 1; i < Math.max(Square.FILE_COUNT, Square.RANK_COUNT); i++) {
                 int newRank = rank + dir[0] * i;
                 int newFile = file + dir[1] * i;
 
@@ -425,7 +421,7 @@ public class ChineseAttacks {
 
         if (red) {
             // 红兵向上移动
-            if (rank < BOARD_HEIGHT - 1) {
+            if (rank < Square.RANK_COUNT - 1) {
                 attacks = Bits.setBit(attacks, square(rank + 1, file));
             }
             // 过河后可以左右移动
@@ -433,7 +429,7 @@ public class ChineseAttacks {
                 if (file > 0) {
                     attacks = Bits.setBit(attacks, square(rank, file - 1));
                 }
-                if (file < BOARD_WIDTH - 1) {
+                if (file < Square.FILE_COUNT - 1) {
                     attacks = Bits.setBit(attacks, square(rank, file + 1));
                 }
             }
@@ -447,7 +443,7 @@ public class ChineseAttacks {
                 if (file > 0) {
                     attacks = Bits.setBit(attacks, square(rank, file - 1));
                 }
-                if (file < BOARD_WIDTH - 1) {
+                if (file < Square.FILE_COUNT - 1) {
                     attacks = Bits.setBit(attacks, square(rank, file + 1));
                 }
             }

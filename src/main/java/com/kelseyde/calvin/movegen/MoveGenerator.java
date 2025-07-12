@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.kelseyde.calvin.board.Bits;
+import com.kelseyde.calvin.board.Bits.Square;
 import com.kelseyde.calvin.board.Board;
 import com.kelseyde.calvin.board.Move;
 import com.kelseyde.calvin.board.Piece;
@@ -264,7 +265,7 @@ public class MoveGenerator {
 
     private long[] getFileMask(int file) {
         long[] mask = Bits.emptyBitBoard();
-        for (int rank = 0; rank < ChineseAttacks.BOARD_HEIGHT; rank++) {
+        for (int rank = 0; rank < Square.RANK_COUNT; rank++) {
             int square = ChineseAttacks.square(rank, file);
             mask = Bits.setBit(mask, square);
         }

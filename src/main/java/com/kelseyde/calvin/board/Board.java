@@ -2,7 +2,6 @@ package com.kelseyde.calvin.board;
 
 import java.util.Arrays;
 
-import com.kelseyde.calvin.board.Bits.File;
 import com.kelseyde.calvin.board.Bits.Square;
 import com.kelseyde.calvin.search.Search;
 import com.kelseyde.calvin.uci.UCI;
@@ -700,10 +699,10 @@ public class Board {
 
     public void print() {
 
-        for (int rank = 7; rank >= 0; --rank) {
-            System.out.print(" +---+---+---+---+---+---+---+---+\n");
+        for (int rank = 9; rank >= 0; --rank) {
+            System.out.print(" +---+---+---+---+---+---+---+---+---+\n");
 
-            for (int file = 0; file < 8; ++file) {
+            for (int file = 0; file < 9; ++file) {
                 int sq = Square.of(rank, file);
                 Piece piece = pieceAt(sq);
                 if (piece == null) {
@@ -713,15 +712,12 @@ public class Board {
                 boolean white = Bits.isEmpty(Bits.and(getWhitePieces(), Bits.of(sq)));
                 System.out.print(" | " + (white ? piece.code().toUpperCase() : piece.code()));
             }
-
             System.out.print(" | " + (rank + 1) + "\n");
         }
-
-        System.out.print(" +---+---+---+---+---+---+---+---+\n");
-        System.out.print("   a   b   c   d   e   f   g   h\n\n");
-
+        System.out.print(" +---+---+---+---+---+---+---+---+---+\n");
+        System.out.print("   a   b   c   d   e   f   g   h   i\n\n");
         System.out.print((white ? "White" : "Black") + " to move\n");
-
     }
+
 
 }

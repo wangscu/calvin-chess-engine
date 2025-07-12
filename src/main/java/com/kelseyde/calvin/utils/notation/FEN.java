@@ -28,7 +28,7 @@ public record FEN(String value,
                   int halfMoveClock,
                   int fullMoveNumber) {
 
-    public static final String STARTPOS = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBKABNBR w - - 0 1";
+    public static final String STARTPOS = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1";
 
     public static FEN startpos() {
         return FEN.parse(FEN.STARTPOS);
@@ -56,7 +56,6 @@ public record FEN(String value,
 
         String[] ranks = board.split("/");
         for (String rank : ranks) {
-
             if (FenPatterns.RANK.matcher(rank).matches())
                 throw new InvalidFenException("Consecutive numbers in rank are not allowed", fen);
 
@@ -94,14 +93,6 @@ public record FEN(String value,
         if (!FenPatterns.TURN.matcher(turn).matches())
             throw new InvalidFenException("Invalid turn: " + turn, fen);
 
-        String castle = parts[2];
-        if (!FenPatterns.CASTLE.matcher(castle).matches())
-            throw new InvalidFenException("Invalid castling rights: " + castle, fen);
-
-        String enPassant = parts[3];
-        if (!FenPatterns.EN_PASSANT.matcher(enPassant).matches())
-            throw new InvalidFenException("Invalid en passant square: " + enPassant, fen);
-
         String halfMove = parts.length > 4 ? parts[4] : "0";
         if (!FenPatterns.HALF_MOVE.matcher(halfMove).matches())
             throw new InvalidFenException("Invalid half move clock: " + halfMove, fen);
@@ -113,13 +104,12 @@ public record FEN(String value,
         long[][] bitboards = new long[Piece.COUNT + 2][2];
         Piece[] pieces = new Piece[Square.COUNT];
         calculatePiecePositions(board, bitboards, pieces);
-        int enPassantFile = parseEnPassantFile(enPassant);
         boolean whiteToMove = turn.equals("w");
         int castleRights = 0;
         int halfMoveClock = Integer.parseInt(halfMove);
         int fullMoveNumber = Integer.parseInt(fullMove);
 
-        return new FEN(fen, bitboards, pieces, enPassantFile, whiteToMove, castleRights, halfMoveClock, fullMoveNumber);
+        return new FEN(fen, bitboards, pieces, 0, whiteToMove, castleRights, halfMoveClock, fullMoveNumber);
     }
 
     /**
@@ -147,9 +137,9 @@ public record FEN(String value,
         try {
             StringBuilder sb = new StringBuilder();
 
-            for (int rank = 7; rank >= 0; rank--) {
+            for (int rank = 9; rank >= 0; --rank) {
                 int emptySquares = 0;
-                for (int file = 0; file < 8; file++) {
+                for (int file = 0; file < 9; ++file) {
                     int square = Square.of(rank, file);
                     Piece piece = board.pieceAt(square);
                     if (piece != null) {
@@ -175,11 +165,8 @@ public record FEN(String value,
             String whiteToMove = toSideToMove(board.isWhite());
             sb.append(" ").append(whiteToMove);
 
-            String castlingRights = toCastlingRights(board.getState().getRights());
-            sb.append(" ").append(castlingRights);
-
-            String enPassantSquare = toEnPassantSquare(board.getState().getEnPassantFile(), board.isWhite());
-            sb.append(" ").append(enPassantSquare);
+            sb.append(" ").append("-");
+            sb.append(" ").append("-");
 
             String fiftyMoveCounter = toFiftyMoveCounter(board.getState().getHalfMoveClock());
             sb.append(" ").append(fiftyMoveCounter);
@@ -251,43 +238,9 @@ public record FEN(String value,
     private static void updatePiecePosition(long[][] bbs, Piece[] pcs, int square, Piece piece, boolean white) {
         int pieceIndex = piece.index();
         int colourIndex = Piece.COUNT + Colour.index(white);
-        //bbs[pieceIndex] |= Bits.of(square);
         bbs[pieceIndex] = Bits.or(bbs[pieceIndex], Bits.of(square));
-        //bbs[colourIndex] |= Bits.of(square);
         bbs[colourIndex] = Bits.or(bbs[colourIndex], Bits.of(square));
         pcs[square] = piece;
-    }
-
-    private static String toCastlingRights(int rights) {
-        if (rights == Castling.empty()) {
-            return "-";
-        }
-        String rightsString = "";
-        int wk = Castling.getRook(rights, true, true);
-        if (wk != Castling.NO_ROOK) {
-            rightsString += UCI.Options.chess960 ? File.toNotation(wk).toUpperCase() : "K";
-        }
-        int wq = Castling.getRook(rights, false, true);
-        if (wq != Castling.NO_ROOK) {
-            rightsString += UCI.Options.chess960 ? File.toNotation(wq).toUpperCase() : "Q";
-        }
-        int bk = Castling.getRook(rights, true, false);
-        if (bk != Castling.NO_ROOK) {
-            rightsString += UCI.Options.chess960 ? File.toNotation(bk) : "k";
-        }
-        int bq = Castling.getRook(rights, false, false);
-        if (bq != Castling.NO_ROOK) {
-            rightsString += UCI.Options.chess960 ? File.toNotation(bq) : "q";
-        }
-        return rightsString;
-    }
-
-    private static String toEnPassantSquare(int enPassantFile, boolean white) {
-        int rank = white ? 2 : 5;
-        if (enPassantFile == -1) {
-            return "-";
-        }
-        return Square.toNotation(Square.of(rank, enPassantFile));
     }
 
     private static String toFiftyMoveCounter(int fiftyMoveCounter) {
@@ -306,8 +259,6 @@ public record FEN(String value,
         public static final Pattern BOARD       = Pattern.compile("^([rnbakpcRNBAKPC1-9]+/){9}[rnbakpcRNBAKPC1-9]+$");
         public static final Pattern RANK        = Pattern.compile(".*\\d{2,}.*");
         public static final Pattern TURN        = Pattern.compile("^[wb]$");
-        public static final Pattern CASTLE      = Pattern.compile("^(-|[A-HKQ]*[a-hkq]*)$");
-        public static final Pattern EN_PASSANT  = Pattern.compile("^(-|[a-h][36])$");
         public static final Pattern HALF_MOVE   = Pattern.compile("^\\d+$");
         public static final Pattern FULL_MOVE   = Pattern.compile("^\\d+$");
     }

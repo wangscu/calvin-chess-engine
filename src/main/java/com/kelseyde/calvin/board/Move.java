@@ -130,9 +130,6 @@ public record Move(int value) {
     public static String toUCI(Move move) {
         if (move == null) return "-";
         String notation = Bits.Square.toNotation(move.from()) + Bits.Square.toNotation(move.to());
-        if (move.promoPiece() != null) {
-            notation += move.promoPiece().code();
-        }
         return notation;
     }
 

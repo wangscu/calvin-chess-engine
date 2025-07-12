@@ -9,10 +9,29 @@ import com.kelseyde.calvin.utils.notation.FEN;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 public class BoardTest {
+
+    /**
+     * 当头炮（炮二平五） 将 b3 的炮移动到 e3（中路第五列），对应行变为 1c4C1（小写 c 表示红炮）
+     */
+    @Test
+    public void testMakeMove() {
+        FEN fen = FEN.startpos();
+        Board board = fen.toBoard();
+        board.makeMove(Move.fromUCI("b2e2"));
+        board.makeMove(Move.fromUCI("b9c7"));
+        Assertions.assertEquals("r1bakabnr/9/1cn4c1/p1p1p1p1p/9/9/P1P1P1P1P/4C2C1/9/RNBAKABNR w - - 2 2", FEN.fromBoard(board).value());
+        String movesStr = Arrays.asList(board.getMoves()).stream()
+                .filter(m->m!=null)
+                .map(Move::toUCI).collect(Collectors.joining(" "));
+        String fenStr = "position fen " + fen.value() + " moves " + movesStr;
+        Assertions.assertEquals("position fen rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBAKABNR w - - 0 1 moves b2e2 b9c7", fenStr);
+    }
 
     @Test
     public void testSimpleMakeMove() {

@@ -249,12 +249,10 @@ public class Bits {
     public static void print(long[] bb) {
         for (int rank = 7; rank >= 0; --rank) {
             System.out.print(" +---+---+---+---+---+---+---+---+\n");
-
             for (int file = 0; file < 8; ++file) {
                 boolean piece = Bits.isEmpty(Bits.and(bb, Bits.of(Square.of(rank, file))));
                 System.out.print(" | " + (piece ? '1' : ' '));
             }
-
             System.out.print(" | "  + (rank + 1) + "\n");
         }
         System.out.print(" +---+---+---+---+---+---+---+---+\n");
@@ -267,14 +265,14 @@ public class Bits {
     public static class Square {
 
         public static final int COUNT = 90;
-        public static final long ALL = ~0L;
-        public static final long NONE = 0L;
+        public static final int RANK_COUNT = 10;
+        public static final int FILE_COUNT = 9;
 
         /**
          * 根据行列号计算格子索引
          */
         public static int of(int rank, int file) {
-            return (rank << 3) + file;
+            return rank * FILE_COUNT + file;
         }
 
         /**
@@ -309,8 +307,8 @@ public class Bits {
          * 从代数记号转换为格子索引
          */
         public static int fromNotation(String algebraic) {
-            int xOffset = List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h').indexOf(algebraic.charAt(0));
-            int yAxis = (Integer.parseInt(Character.valueOf(algebraic.charAt(1)).toString()) - 1) * 8;
+            int xOffset = List.of('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i').indexOf(algebraic.charAt(0));
+            int yAxis = Integer.parseInt(Character.valueOf(algebraic.charAt(1)).toString()) * FILE_COUNT;
             return yAxis + xOffset;
         }
     }
@@ -332,14 +330,14 @@ public class Bits {
 
         // 列号到字母的映射
         public static final Map<Integer, String> FILE_CHAR_MAP = Map.of(
-                0, "a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h"
+                0, "a", 1, "b", 2, "c", 3, "d", 4, "e", 5, "f", 6, "g", 7, "h", 8, "i"
         );
 
         /**
          * 获取格子所在列号
          */
-        public static int of(int sq) {
-            return sq & 7;
+        public static int of(int square) {
+            return square %  Square.FILE_COUNT;
         }
 
         /**
@@ -385,14 +383,14 @@ public class Bits {
 
         // 行号到数字的映射
         public static final Map<Integer, String> RANK_CHAR_MAP = Map.of(
-                0, "1", 1, "2", 2, "3", 3, "4", 4, "5", 5, "6", 6, "7", 7, "8"
+                0, "0", 1, "1", 2, "2", 3, "3", 4, "4", 5, "5", 6, "6", 7, "7", 8, "8", 9, "9"
         );
 
         /**
          * 获取格子所在行号
          */
-        public static int of(int sq) {
-            return sq >>> 3;
+        public static int of(int square) {
+            return square / Square.FILE_COUNT;
         }
 
         /**
@@ -400,53 +398,6 @@ public class Bits {
          */
         public static String toRankNotation(int sq) {
             return RANK_CHAR_MAP.get(of(sq));
-        }
-    }
-
-    /**
-     * 射线操作工具类
-     */
-    public static class Ray {
-
-        /**
-         * 计算两个格子之间的射线位图
-         */
-        public static long[] between(int from, int to) {
-            if (!Square.isValid(from) || !Square.isValid(to) || (from == to)) {
-                return Bits.emptyBitBoard();
-            }
-            int offset = direction(from, to);
-            if (offset == 0) return Bits.emptyBitBoard();
-            long[] ray = Bits.emptyBitBoard();
-            int sq = from + offset;
-            while (Square.isValid(sq) && sq != to) {
-                ray = Bits.or(ray, Bits.of(sq)) ;
-                sq += offset;
-            }
-            return ray;
-        }
-
-        /**
-         * 确定两个格子之间的方向偏移量
-         */
-        private static int direction(int from, int to) {
-            int startRank = Rank.of(from);
-            int endRank = Rank.of(to);
-            int startFile = File.of(from);
-            int endFile = File.of(to);
-            if (startRank == endRank) {
-                return from > to ? -1 : 1;
-            }
-            else if (startFile == endFile) {
-                return from > to ? -8 : 8;
-            }
-            else if (Math.abs(startRank - endRank) == Math.abs(startFile - endFile)) {
-                return from > to ? (from - to) % 9 == 0 ? -9 : -7 : (to - from) % 9 == 0 ? 9 : 7;
-            }
-            else if (startRank + startFile == endRank + endFile) {
-                return from > to ? -9 : 9;
-            }
-            return 0;
         }
     }
 }
