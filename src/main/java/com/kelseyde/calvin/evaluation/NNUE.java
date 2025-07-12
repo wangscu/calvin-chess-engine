@@ -132,7 +132,7 @@ public class NNUE {
             for (int pieceIndex = 0; pieceIndex < Piece.COUNT; pieceIndex++) {
 
                 Piece piece = Piece.values()[pieceIndex];
-                long pieces = board.getPieces(piece, white);
+                long[] pieces = board.getPieces(piece, white);
                 long cachedPieces = cacheEntry.bitboards[pieceIndex] & cacheEntry.bitboards[Piece.COUNT + colourIndex];
 
                 // Calculate which pieces need to be added and removed from the accumulator.
@@ -308,12 +308,11 @@ public class NNUE {
 
     // Calculate the current material phase, which is a weighted sum of the pieces on the board.
     private int materialPhase(Board board) {
-
-        int knights = Bits.count(board.getKnights());
-        int bishops = Bits.count(board.getBishops());
-        int rooks = Bits.count(board.getRooks());
-        int queens = Bits.count(board.getQueens());
-        return 3 * knights + 3 * bishops + 5 * rooks + 10 * queens;
+        int knights = Bits.popCount(board.getKnights());
+        int bishops = Bits.popCount(board.getBishops());
+        int rooks = Bits.popCount(board.getRooks());
+        int advisors = Bits.popCount(board.getAdvisors());
+        return 3 * knights + 3 * bishops + 5 * rooks + 10 * advisors;
 
     }
 

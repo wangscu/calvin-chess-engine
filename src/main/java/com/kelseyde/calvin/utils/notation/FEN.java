@@ -20,7 +20,7 @@ import java.util.stream.Stream;
  * back into a FEN string.
  */
 public record FEN(String value,
-                  long[] bitboards,
+                  long[][] bitboards,
                   Piece[] pieces,
                   int enPassantFile,
                   boolean whiteToMove,
@@ -110,7 +110,7 @@ public record FEN(String value,
         if (!FenPatterns.FULL_MOVE.matcher(fullMove).matches())
             throw new InvalidFenException("Invalid full move number: " + fullMove, fen);
 
-        long[] bitboards = new long[Piece.COUNT + 2];
+        long[][] bitboards = new long[Piece.COUNT + 2][2];
         Piece[] pieces = new Piece[Square.COUNT];
         calculatePiecePositions(board, bitboards, pieces);
         int enPassantFile = parseEnPassantFile(enPassant);
@@ -136,7 +136,7 @@ public record FEN(String value,
         board.getState().setEnPassantFile(enPassantFile);
         board.getState().setKey(Key.generateKey(board));
         board.getState().setPawnKey(Key.generatePawnKey(board));
-        board.getState().setNonPawnKeys(Key.generateNonPawnKeys(board));
+        //board.getState().setNonPawnKeys(Key.generateNonPawnKeys(board));
         return board;
     }
 

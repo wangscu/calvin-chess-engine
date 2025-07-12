@@ -4,7 +4,6 @@ import com.kelseyde.calvin.board.Board;
 import com.kelseyde.calvin.board.Move;
 import com.kelseyde.calvin.board.Piece;
 import com.kelseyde.calvin.engine.EngineConfig;
-import com.kelseyde.calvin.search.SEE;
 import com.kelseyde.calvin.search.SearchHistory;
 import com.kelseyde.calvin.search.SearchStack;
 import com.kelseyde.calvin.search.ordering.MovePicker.MoveType;
@@ -47,22 +46,10 @@ public class MoveScorer {
         boolean capture = captured != null;
         boolean promotion = move.isPromotion();
 
-        if (promotion)
-            return scorePromotion(move, piece, captured);
-        else if (capture)
+        if (capture)
             return scoreCapture(board, move, piece, captured);
         else
             return scoreQuiet(board, move, piece, ply);
-
-    }
-
-    // Promotions are considered noisy moves. They are scored based on the value of the promotion piece. Queen
-    // promotions are considered 'good noisies', while under-promotions are considered 'bad noisies'.
-    private ScoredMove scorePromotion(Move move, Piece piece, Piece captured) {
-
-        int score = SEE.value(config, move.promoPiece()) - SEE.value(config, Piece.PAWN);
-        MoveType type = move.promoPiece() == Piece.QUEEN ? MoveType.GOOD_NOISY : MoveType.BAD_NOISY;
-        return new ScoredMove(move, piece, captured, score, 0, type);
 
     }
 
@@ -72,9 +59,11 @@ public class MoveScorer {
     private ScoredMove scoreCapture(Board board, Move move, Piece piece, Piece captured) {
 
         int historyScore = history.captureHistory().get(piece, move.to(), captured, board.isWhite());
-        int score = SEE.value(config, captured) + historyScore / 4;
+        //int score = SEE.value(config, captured) + historyScore / 4;
+        int score = historyScore / 4;
         int threshold = -score / seeNoisyDivisor + seeNoisyOffset;
-        MoveType type = SEE.see(config, board, move, threshold) ? MoveType.GOOD_NOISY : MoveType.BAD_NOISY;
+        //MoveType type = SEE.see(config, board, move, threshold) ? MoveType.GOOD_NOISY : MoveType.BAD_NOISY;
+        MoveType type = MoveType.GOOD_NOISY;
         return new ScoredMove(move, piece, captured, score, historyScore, type);
 
     }

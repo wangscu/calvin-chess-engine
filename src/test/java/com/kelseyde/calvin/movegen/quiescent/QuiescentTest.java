@@ -3,6 +3,7 @@ package com.kelseyde.calvin.movegen.quiescent;
 import com.kelseyde.calvin.board.Board;
 import com.kelseyde.calvin.board.Move;
 import com.kelseyde.calvin.movegen.MoveGenerator;
+import com.kelseyde.calvin.movegen.MoveGenerator.MoveFilter;
 import com.kelseyde.calvin.utils.notation.FEN;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -28,7 +29,7 @@ public class QuiescentTest {
         );
         assertMoves(expected, moves);
 
-        moves = moveGenerator.generateMoves(board, MoveGenerator.MoveFilter.NOISY);
+        moves = moveGenerator.generateMoves(board, MoveFilter.ALL);
         expected = List.of(
                 Move.fromUCI("a6b7"),
                 Move.fromUCI("f8d7"),
@@ -53,7 +54,7 @@ public class QuiescentTest {
         );
         assertMoves(expected, moves);
 
-        moves = moveGenerator.generateMoves(board, MoveGenerator.MoveFilter.NOISY);
+        moves = moveGenerator.generateMoves(board, MoveFilter.ALL);
         expected = List.of(
                 Move.fromUCI("g3h4"),
                 Move.fromUCI("b3f7"),
@@ -78,7 +79,7 @@ public class QuiescentTest {
         );
         assertMoves(expected, moves);
 
-        moves = moveGenerator.generateMoves(board, MoveGenerator.MoveFilter.NOISY);
+        moves = moveGenerator.generateMoves(board, MoveFilter.ALL);
         expected = List.of(
                 Move.fromUCI("h2g4"),
                 Move.fromUCI("c6d6"),
@@ -112,7 +113,7 @@ public class QuiescentTest {
         );
         assertMoves(expected, moves);
 
-        moves = moveGenerator.generateMoves(board, MoveGenerator.MoveFilter.NOISY);
+        moves = moveGenerator.generateMoves(board, MoveFilter.ALL);
         expected = List.of(
                 Move.fromUCI("g4h3"),
                 Move.fromUCI("f2g1", Move.PROMOTE_TO_QUEEN_FLAG),
@@ -145,7 +146,7 @@ public class QuiescentTest {
         );
         assertMoves(expected, moves);
 
-        moves = moveGenerator.generateMoves(board, MoveGenerator.MoveFilter.NOISY);
+        moves = moveGenerator.generateMoves(board, MoveFilter.ALL);
         expected = List.of(
                 Move.fromUCI("h1h8"),
                 Move.fromUCI("e1e7"),

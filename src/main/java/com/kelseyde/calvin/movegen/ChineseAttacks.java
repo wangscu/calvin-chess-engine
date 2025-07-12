@@ -1,14 +1,16 @@
-package com.kelseyde.calvin.board;
+package com.kelseyde.calvin.movegen;
+
+import com.kelseyde.calvin.board.Bits;
+import com.kelseyde.calvin.board.Bits.Square;
 
 /**
  * 中国象棋Magic Bitboards实现 使用long[2]表示90格棋盘，支持车、马、炮、兵、相、士、将
  */
-public class ChineseMagicBitboards {
+public class ChineseAttacks {
 
     // 棋盘常量
     public static final int BOARD_WIDTH = 9;
     public static final int BOARD_HEIGHT = 10;
-    public static final int TOTAL_SQUARES = 90;
 
     // Magic数据结构
     public static class MagicEntry {
@@ -34,13 +36,13 @@ public class ChineseMagicBitboards {
     }
 
     // 各棋子的Magic表
-    private static MagicEntry[][] rookMagics = new MagicEntry[TOTAL_SQUARES][];
-    private static MagicEntry[][] cannonMagics = new MagicEntry[TOTAL_SQUARES][];
-    private static MagicEntry[][] horseMagics = new MagicEntry[TOTAL_SQUARES][];
-    private static long[][][] pawnAttacks = new long[2][TOTAL_SQUARES][]; // [color][square]
-    private static long[][] elephantAttacks = new long[TOTAL_SQUARES][];
-    private static long[][] advisorAttacks = new long[TOTAL_SQUARES][];
-    private static long[][] kingAttacks = new long[TOTAL_SQUARES][];
+    private static MagicEntry[][] rookMagics = new MagicEntry[Square.COUNT][];
+    private static MagicEntry[][] cannonMagics = new MagicEntry[Square.COUNT][];
+    private static MagicEntry[][] horseMagics = new MagicEntry[Square.COUNT][];
+    private static long[][][] pawnAttacks = new long[2][Square.COUNT][]; // [color][square]
+    private static long[][] elephantAttacks = new long[Square.COUNT][];
+    private static long[][] advisorAttacks = new long[Square.COUNT][];
+    private static long[][] kingAttacks = new long[Square.COUNT][];
 
     // 位置工具方法
     public static int rank(int square) {
@@ -81,9 +83,9 @@ public class ChineseMagicBitboards {
 
     // 车的Magic初始化
     private static void initRookMagics() {
-        rookMagics = new MagicEntry[TOTAL_SQUARES][];
+        rookMagics = new MagicEntry[Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             rookMagics[square] = new MagicEntry[1];
 
             // 计算相关位掩码（横竖线，去除边界）
@@ -116,9 +118,9 @@ public class ChineseMagicBitboards {
 
     // 炮的Magic初始化
     private static void initCannonMagics() {
-        cannonMagics = new MagicEntry[TOTAL_SQUARES][];
+        cannonMagics = new MagicEntry[Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             cannonMagics[square] = new MagicEntry[1];
 
             long[] mask = generateRookMask(square); // 炮的移动掩码与车相同
@@ -142,9 +144,9 @@ public class ChineseMagicBitboards {
 
     // 马的Magic初始化
     private static void initHorseMagics() {
-        horseMagics = new MagicEntry[TOTAL_SQUARES][];
+        horseMagics = new MagicEntry[Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             horseMagics[square] = new MagicEntry[1];
 
             long[] mask = generateHorseMask(square);
@@ -168,9 +170,9 @@ public class ChineseMagicBitboards {
 
     // 兵的攻击初始化
     private static void initPawnAttacks() {
-        pawnAttacks = new long[2][TOTAL_SQUARES][];
+        pawnAttacks = new long[2][Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             // 红兵（向上移动）
             pawnAttacks[0][square] = generatePawnAttacks(square, true);
             // 黑兵（向下移动）
@@ -180,27 +182,27 @@ public class ChineseMagicBitboards {
 
     // 相的攻击初始化
     private static void initElephantAttacks() {
-        elephantAttacks = new long[TOTAL_SQUARES][];
+        elephantAttacks = new long[Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             elephantAttacks[square] = generateElephantAttacks(square);
         }
     }
 
     // 士的攻击初始化
     private static void initAdvisorAttacks() {
-        advisorAttacks = new long[TOTAL_SQUARES][];
+        advisorAttacks = new long[Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             advisorAttacks[square] = generateAdvisorAttacks(square);
         }
     }
 
     // 将的攻击初始化
     private static void initKingAttacks() {
-        kingAttacks = new long[TOTAL_SQUARES][];
+        kingAttacks = new long[Square.COUNT][];
 
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             kingAttacks[square] = generateKingAttacks(square);
         }
     }
@@ -263,7 +265,7 @@ public class ChineseMagicBitboards {
         int bit = 0;
 
         // 遍历所有可能的方格位置
-        for (int square = 0; square < TOTAL_SQUARES; square++) {
+        for (int square = 0; square < Square.COUNT; square++) {
             // 检查当前位置是否在掩码中被设置
             if (Bits.testBit(mask, square)) {
                 // 根据index的对应位决定是否将该位置加入子集

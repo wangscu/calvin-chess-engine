@@ -194,22 +194,14 @@ public class Board {
     }
 
     private void updateState(int from, int to, Piece piece, Piece captured, Move move) {
-
         state.moved = piece;
         state.captured = captured;
         boolean resetClock = captured != null || Piece.PAWN.equals(piece);
         state.halfMoveClock = resetClock ? 0 : ++state.halfMoveClock;
-
-        int castleRights = updateCastleRights(from, to, piece);
-        state.key ^= Key.rights(state.rights, castleRights);
-        state.rights = castleRights;
-
-        int enPassantFile = move.isPawnDoubleMove() ? File.of(to) : -1;
-        state.key ^= Key.enPassant(state.enPassantFile, enPassantFile);
-        state.enPassantFile = enPassantFile;
-
-        state.key ^= Key.sideToMove();
-
+        state.rights = 0;
+        state.enPassantFile = 0;
+        state.key ^= Key.sideToMove()[0];
+        state.key ^= Key.sideToMove()[1];
     }
 
     private void unmakeCastlingMove(int from, int to) {
@@ -300,7 +292,8 @@ public class Board {
     // Used exclusively for null-move pruning during search.
     public void makeNullMove() {
         white = !white;
-        long key = state.key ^ Key.nullMove(state.enPassantFile);
+        //long key = state.key ^ Key.nullMove(state.enPassantFile);
+        long key = state.key;
         long[] nonPawnKeys = new long[] {state.nonPawnKeys[0], state.nonPawnKeys[1]};
         BoardState newState = new BoardState(key, state.pawnKey, nonPawnKeys, null, null, -1, state.getRights(), 0);
         states[ply++] = state;
@@ -343,25 +336,15 @@ public class Board {
 
 
     private void updateKeys(int from, int to, Piece piece, boolean white) {
-        long hash = Key.piece(from, to, piece, white);
-        state.key ^= hash;
-        if (piece == Piece.PAWN) {
-            state.pawnKey ^= hash;
-        } else {
-            int colourIndex = Colour.index(white);
-            state.nonPawnKeys[colourIndex] ^= hash;
-        }
+        long[] hash = Key.piece(from, to, piece, white);
+        state.key ^= hash[0];
+        state.key ^= hash[1];
     }
 
     private void updateKeys(int square, Piece piece, boolean white) {
-        long hash = Key.piece(square, piece, white);
-        state.key ^= hash;
-        if (piece == Piece.PAWN) {
-            state.pawnKey ^= hash;
-        } else {
-            int colourIndex = Colour.index(white);
-            state.nonPawnKeys[colourIndex] ^= hash;
-        }
+        long[] hash = Key.piece(square, piece, white);
+        state.key ^= hash[0];
+        state.key ^= hash[1];
     }
 
     private void updateMailbox(int from, int to, Piece piece) {

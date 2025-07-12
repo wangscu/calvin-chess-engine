@@ -15,7 +15,7 @@ public class InputBucketCache {
     public static final class BucketCacheEntry {
 
         // Each piece bitboard (0-5) and the two sides' bitboards (6-7)
-        public long[] bitboards = new long[Piece.COUNT + 2];
+        public long[][] bitboards = new long[Piece.COUNT + 2][2];
 
         // The cached accumulator last used for this bucket
         public short[] features;

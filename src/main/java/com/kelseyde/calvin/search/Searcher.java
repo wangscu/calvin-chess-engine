@@ -366,7 +366,8 @@ public class Searcher implements Search {
                 && prev.move != null
                 && staticEval >= beta
                 && (!ttHit || cutNode || ttEntry.score() >= beta)
-                && board.hasNonPawnMaterial()) {
+                //&& board.hasNonPawnMaterial()
+            ) {
 
                 int r = config.nmpBase()
                         + depth / config.nmpDivisor()
@@ -515,7 +516,8 @@ public class Searcher implements Search {
                     && moveCount > 1
                     && !isGoodNoisy
                     && !isMateScore
-                    && !SEE.see(config, board, move, seeThreshold)) {
+                    //&& !SEE.see(config, board, move, seeThreshold)
+            ) {
                 continue;
             }
 
@@ -804,19 +806,22 @@ public class Searcher implements Search {
 
             // Delta Pruning
             // Skip captures where the value of the captured piece plus a margin is still below alpha.
-            if (!inCheck && capture && !promotion && !recapture && staticEval + SEE.value(config, captured) + config.dpMargin() < alpha)
+            //if (!inCheck && capture && !promotion && !recapture && staticEval + SEE.value(config, captured) + config.dpMargin() < alpha)
+            if (!inCheck && capture && !promotion && !recapture && staticEval + config.dpMargin() < alpha)
                 continue;
 
             // Futility Pruning
             // Skip captures that don't win material when the static eval is far below alpha.
-            if (!inCheck && capture && !recapture && futilityScore <= alpha && !SEE.see(config, board, move, 1)) {
+            //if (!inCheck && capture && !recapture && futilityScore <= alpha && !SEE.see(config, board, move, 1)) {
+            if (!inCheck && capture && !recapture && futilityScore <= alpha) {
                 bestScore = Math.max(bestScore, futilityScore);
                 continue;
             }
 
             // SEE Pruning
             // Skip moves which lose material once all the pieces are swapped off.
-            if (!inCheck && !recapture && !SEE.see(config, board, move, config.qsSeeThreshold()))
+            //if (!inCheck && !recapture && !SEE.see(config, board, move, config.qsSeeThreshold()))
+            if (!inCheck && !recapture)
                 continue;
 
             // Evasion Pruning

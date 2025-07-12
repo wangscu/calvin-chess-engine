@@ -50,7 +50,7 @@ public class StandardMovePicker extends MovePicker {
         while (nextMove == null) {
             nextMove = switch (stage) {
                 case TT_MOVE ->     pickTTMove(Stage.GEN_NOISY);
-                case GEN_NOISY ->   generate(MoveFilter.NOISY, Stage.GOOD_NOISY);
+                case GEN_NOISY ->   generate(MoveFilter.ALL, Stage.GOOD_NOISY);
                 case GOOD_NOISY ->  pickMove(Stage.KILLER);
                 case KILLER ->      pickKiller(Stage.GEN_QUIET);
                 case GEN_QUIET ->   generate(MoveFilter.QUIET, Stage.GOOD_QUIET);

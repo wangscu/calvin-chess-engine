@@ -5,11 +5,8 @@ import java.util.List;
 
 import com.kelseyde.calvin.board.Bits;
 import com.kelseyde.calvin.board.Board;
-import com.kelseyde.calvin.board.Castling;
-import com.kelseyde.calvin.board.ChineseMagicBitboards;
 import com.kelseyde.calvin.board.Move;
 import com.kelseyde.calvin.board.Piece;
-import com.kelseyde.calvin.uci.UCI;
 
 /**
  * Generates all the legal moves in a given position. Using a hybrid of pseudo-legal and legal move generation: first we calculate the bitboards for
@@ -105,21 +102,11 @@ public class MoveGenerator {
      * @return 如果移动会造成将军返回true，否则返回false
      */
     public boolean givesCheck(Board board, Move move) {
-        // 临时执行移动
-        Piece movedPiece = board.pieceAt(move.from());
-        Piece capturedPiece = board.pieceAt(move.to());
-
         // 执行移动
-        board.setPieceAt(move.to(), movedPiece);
-        board.setPieceAt(move.from(), null);
-
+        board.makeMove(move);
         // 检查是否造成将军
         boolean isCheck = isCheck(board, !white); // 检查对手是否被将军
-
-        // 撤销移动
-        board.setPieceAt(move.from(), movedPiece);
-        board.setPieceAt(move.to(), capturedPiece);
-
+        board.unmakeMove();
         return isCheck;
     }
 
@@ -141,7 +128,7 @@ public class MoveGenerator {
             int pawnSquare = Bits.next(currentPawns);
 
             // 获取该兵的所有可能移动位置
-            long[] pawnAttacks = ChineseMagicBitboards.getPawnAttacks(pawnSquare, white);
+            long[] pawnAttacks = ChineseAttacks.getPawnAttacks(pawnSquare, white);
 
             // 生成该兵的所有移动
             generatePawnMovesFromSquare(board, pawnSquare, pawnAttacks, opponents, ourPieces);
@@ -210,7 +197,7 @@ public class MoveGenerator {
             int knightSquare = Bits.next(currentKnights);
 
             // 获取该马的所有可能移动位置（已经考虑了马腿阻挡）
-            long[] knightAttacks = ChineseMagicBitboards.getHorseAttacks(knightSquare, occupied);
+            long[] knightAttacks = ChineseAttacks.getHorseAttacks(knightSquare, occupied);
 
             // 为该马生成所有可能的移动
             generateKnightMovesFromSquare(board, knightSquare, knightAttacks, opponents, ourPieces);
@@ -262,13 +249,13 @@ public class MoveGenerator {
         int opponentKingSquare = Bits.next(opponentKing);
 
         // 检查是否在同一列
-        if (ChineseMagicBitboards.file(ourKingSquare) != ChineseMagicBitboards.file(opponentKingSquare)) {
+        if (ChineseAttacks.file(ourKingSquare) != ChineseAttacks.file(opponentKingSquare)) {
             return false;
         }
 
         // 检查两将之间是否没有其他棋子（除了两个将之外只有2个棋子在该列）
         long[] occupied = board.getOccupied();
-        long[] fileMask = getFileMask(ChineseMagicBitboards.file(ourKingSquare));
+        long[] fileMask = getFileMask(ChineseAttacks.file(ourKingSquare));
         long[] piecesInFile = Bits.and(occupied, fileMask);
 
         // 如果该列只有2个棋子（两个将），则为照面
@@ -277,8 +264,8 @@ public class MoveGenerator {
 
     private long[] getFileMask(int file) {
         long[] mask = Bits.emptyBitBoard();
-        for (int rank = 0; rank < ChineseMagicBitboards.BOARD_HEIGHT; rank++) {
-            int square = ChineseMagicBitboards.square(rank, file);
+        for (int rank = 0; rank < ChineseAttacks.BOARD_HEIGHT; rank++) {
+            int square = ChineseAttacks.square(rank, file);
             mask = Bits.setBit(mask, square);
         }
         return mask;
@@ -303,7 +290,7 @@ public class MoveGenerator {
             int rookSquare = Bits.next(currentRooks);
 
             // 获取该车的所有可能移动位置
-            long[] rookAttacks = ChineseMagicBitboards.getRookAttacks(rookSquare, occupied);
+            long[] rookAttacks = ChineseAttacks.getRookAttacks(rookSquare, occupied);
 
             // 生成该车的所有移动
             generateRookMovesFromSquare(board, rookSquare, rookAttacks, opponents, ourPieces);
@@ -367,7 +354,7 @@ public class MoveGenerator {
             int cannonSquare = Bits.next(currentCannons);
 
             // 获取该炮的所有可能移动位置（隔子攻击）
-            long[] cannonAttacks = ChineseMagicBitboards.getCannonAttacks(cannonSquare, occupied);
+            long[] cannonAttacks = ChineseAttacks.getCannonAttacks(cannonSquare, occupied);
 
             // 生成该炮的所有移动
             generateCannonMovesFromSquare(board, cannonSquare, cannonAttacks, opponents, ourPieces);
@@ -430,7 +417,7 @@ public class MoveGenerator {
             int advisorSquare = Bits.next(currentAdvisors);
 
             // 获取该士的所有可能移动位置（九宫内斜走）
-            long[] advisorAttacks = ChineseMagicBitboards.getAdvisorAttacks(advisorSquare);
+            long[] advisorAttacks = ChineseAttacks.getAdvisorAttacks(advisorSquare);
 
             // 生成该士的所有移动
             generateAdvisorMovesFromSquare(board, advisorSquare, advisorAttacks, opponents, ourPieces);
@@ -509,13 +496,13 @@ public class MoveGenerator {
      */
     private long[] getElephantValidMoves(int square, long[] occupied) {
         // 先获取所有理论移动位置
-        long[] allMoves = ChineseMagicBitboards.getElephantAttacks(square);
+        long[] allMoves = ChineseAttacks.getElephantAttacks(square);
         long[] validMoves = Bits.emptyBitBoard();
 
         // 相的4个田字移动和对应的相眼位置
         int[][] moves = {{2, 2, 1, 1}, {2, -2, 1, -1}, {-2, 2, -1, 1}, {-2, -2, -1, -1}};
-        int rank = ChineseMagicBitboards.rank(square);
-        int file = ChineseMagicBitboards.file(square);
+        int rank = ChineseAttacks.rank(square);
+        int file = ChineseAttacks.file(square);
 
         for (int[] move : moves) {
             int newRank = rank + move[0];
@@ -523,10 +510,10 @@ public class MoveGenerator {
             int eyeRank = rank + move[2];
             int eyeFile = file + move[3];
 
-            if (ChineseMagicBitboards.inBoard(newRank, newFile) && ChineseMagicBitboards.inBoard(eyeRank, eyeFile)) {
+            if (ChineseAttacks.inBoard(newRank, newFile) && ChineseAttacks.inBoard(eyeRank, eyeFile)) {
 
-                int targetSquare = ChineseMagicBitboards.square(newRank, newFile);
-                int eyeSquare = ChineseMagicBitboards.square(eyeRank, eyeFile);
+                int targetSquare = ChineseAttacks.square(newRank, newFile);
+                int eyeSquare = ChineseAttacks.square(eyeRank, eyeFile);
 
                 // 检查目标位置是否在理论移动范围内，且相眼没被阻挡
                 if (Bits.testBit(allMoves, targetSquare) && !Bits.testBit(occupied, eyeSquare)) {
@@ -589,7 +576,7 @@ public class MoveGenerator {
         int kingSquare = Bits.next(kings);
 
         // 获取该将/帅的所有可能移动位置
-        long[] kingAttacks = ChineseMagicBitboards.getKingAttacks(kingSquare);
+        long[] kingAttacks = ChineseAttacks.getKingAttacks(kingSquare);
 
         // 生成该将/帅的所有移动
         generateKingMovesFromSquare(board, kingSquare, kingAttacks, opponents, ourPieces);
@@ -645,8 +632,9 @@ public class MoveGenerator {
     private boolean isLegalKingMove(Board board, int fromSquare, int toSquare) {
         // 临时执行移动
         Piece capturedPiece = board.pieceAt(toSquare);
-        board.setPieceAt(toSquare, Piece.KING);
-        board.setPieceAt(fromSquare, null);
+
+        Move move = new Move(fromSquare, toSquare, null != capturedPiece ? Move.CAPTURE_FLAG : Move.QUIET_FLAG);
+        board.makeMove(move);
 
         boolean isLegal = true;
 
@@ -662,8 +650,7 @@ public class MoveGenerator {
         }
 
         // 撤销移动
-        board.setPieceAt(fromSquare, Piece.KING);
-        board.setPieceAt(toSquare, capturedPiece);
+        board.unmakeMove();
 
         return isLegal;
     }
@@ -680,7 +667,7 @@ public class MoveGenerator {
         int opponentKingSquare = Bits.next(opponentKing);
 
         // 检查是否在同一列
-        if (ChineseMagicBitboards.file(ourKingSquare) != ChineseMagicBitboards.file(opponentKingSquare)) {
+        if (ChineseAttacks.file(ourKingSquare) != ChineseAttacks.file(opponentKingSquare)) {
             return false;
         }
 
@@ -798,7 +785,7 @@ public class MoveGenerator {
             int pawnSquare = Bits.next(currentPawns);
 
             // 获取该兵的攻击位置
-            long[] pawnAttacks = ChineseMagicBitboards.getPawnAttacks(pawnSquare, !white);
+            long[] pawnAttacks = ChineseAttacks.getPawnAttacks(pawnSquare, !white);
 
             // 检查目标位置是否在攻击范围内
             if (Bits.testBit(pawnAttacks, square)) {
@@ -822,7 +809,7 @@ public class MoveGenerator {
         }
 
         // 获取车的攻击位置
-        long[] rookAttacks = ChineseMagicBitboards.getRookAttacks(square, occupied);
+        long[] rookAttacks = ChineseAttacks.getRookAttacks(square, occupied);
         return !Bits.isEmpty(Bits.and(rookAttacks, opponentRooks));
     }
 
@@ -836,7 +823,7 @@ public class MoveGenerator {
         }
 
         // 获取马的攻击位置（考虑马腿限制）
-        long[] horseAttacks = ChineseMagicBitboards.getHorseAttacks(square, occupied);
+        long[] horseAttacks = ChineseAttacks.getHorseAttacks(square, occupied);
         return !Bits.isEmpty(Bits.and(horseAttacks, opponentHorses));
     }
 
@@ -850,7 +837,7 @@ public class MoveGenerator {
         }
 
         // 获取炮的攻击位置（隔子攻击）
-        long[] cannonAttacks = ChineseMagicBitboards.getCannonAttacks(square, occupied);
+        long[] cannonAttacks = ChineseAttacks.getCannonAttacks(square, occupied);
         return !Bits.isEmpty(Bits.and(cannonAttacks, opponentCannons));
     }
 
@@ -864,7 +851,7 @@ public class MoveGenerator {
         }
 
         // 获取相的攻击位置（田字走法，不过河，有相眼限制）
-        long[] elephantAttacks = ChineseMagicBitboards.getElephantAttacks(square);
+        long[] elephantAttacks = ChineseAttacks.getElephantAttacks(square);
         return !Bits.isEmpty(Bits.and(elephantAttacks, opponentElephants));
     }
 
@@ -878,7 +865,7 @@ public class MoveGenerator {
         }
 
         // 获取士的攻击位置（九宫内斜走）
-        long[] advisorAttacks = ChineseMagicBitboards.getAdvisorAttacks(square);
+        long[] advisorAttacks = ChineseAttacks.getAdvisorAttacks(square);
         return !Bits.isEmpty(Bits.and(advisorAttacks, opponentAdvisors));
     }
 
@@ -892,7 +879,7 @@ public class MoveGenerator {
         }
 
         // 获取将的攻击位置（九宫内直走）
-        long[] kingAttacks = ChineseMagicBitboards.getKingAttacks(square);
+        long[] kingAttacks = ChineseAttacks.getKingAttacks(square);
 
         // 还要检查"白脸将"规则（将帅不能照面）
         if (!Bits.isEmpty(Bits.and(kingAttacks, opponentKing))) {
@@ -918,13 +905,13 @@ public class MoveGenerator {
         int opponentKingSquare = Bits.next(opponentKing);
 
         // 检查是否在同一列
-        if (ChineseMagicBitboards.file(ourKingSquare) == ChineseMagicBitboards.file(opponentKingSquare)) {
+        if (ChineseAttacks.file(ourKingSquare) == ChineseAttacks.file(opponentKingSquare)) {
             // 检查两将之间是否没有其他棋子
             long[] occupied = board.getOccupied();
             long[] betweenMask = getBetweenMask(ourKingSquare, opponentKingSquare);
 
             // 如果检查的位置在两将之间，且移除该位置后两将照面，则该位置被攻击
-            if (ChineseMagicBitboards.file(square) == ChineseMagicBitboards.file(ourKingSquare)) {
+            if (ChineseAttacks.file(square) == ChineseAttacks.file(ourKingSquare)) {
                 long[] occupiedWithoutSquare = Bits.clearBit(occupied, square);
                 return Bits.isEmpty(Bits.and(betweenMask, occupiedWithoutSquare));
             }
@@ -939,10 +926,10 @@ public class MoveGenerator {
     private long[] getBetweenMask(int square1, int square2) {
         long[] mask = Bits.emptyBitBoard();
 
-        int file1 = ChineseMagicBitboards.file(square1);
-        int file2 = ChineseMagicBitboards.file(square2);
-        int rank1 = ChineseMagicBitboards.rank(square1);
-        int rank2 = ChineseMagicBitboards.rank(square2);
+        int file1 = ChineseAttacks.file(square1);
+        int file2 = ChineseAttacks.file(square2);
+        int rank1 = ChineseAttacks.rank(square1);
+        int rank2 = ChineseAttacks.rank(square2);
 
         if (file1 == file2) {
             // 同一列
@@ -950,7 +937,7 @@ public class MoveGenerator {
             int maxRank = Math.max(rank1, rank2);
 
             for (int rank = minRank + 1; rank < maxRank; rank++) {
-                int square = ChineseMagicBitboards.square(rank, file1);
+                int square = ChineseAttacks.square(rank, file1);
                 mask = Bits.setBit(mask, square);
             }
         }

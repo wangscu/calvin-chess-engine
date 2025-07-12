@@ -9,9 +9,6 @@ import java.util.Map;
  */
 public class Bits {
 
-    // 中国象棋90格棋盘的总格子数
-    public static final int TOTAL_SQUARES = 90;
-
     /**
      * 获取二进制数中最右边的1的位置
      * @param board 要检查的二进制数组
@@ -206,7 +203,7 @@ public class Bits {
             if (bit < 64) return bit;
             fromIndex = 64;
         }
-        if (fromIndex < TOTAL_SQUARES) {
+        if (fromIndex < Square.COUNT) {
             int bit = Long.numberOfTrailingZeros(bits[1] & (-1L << (fromIndex - 64)));
             if (bit < 26) return bit + 64;
         }
@@ -269,7 +266,7 @@ public class Bits {
      */
     public static class Square {
 
-        public static final int COUNT = 64;
+        public static final int COUNT = 90;
         public static final long ALL = ~0L;
         public static final long NONE = 0L;
 
