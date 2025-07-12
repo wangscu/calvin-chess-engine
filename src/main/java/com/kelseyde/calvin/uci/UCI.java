@@ -198,8 +198,8 @@ public class UCI {
 
     public static void handleThreats(UCICommand command) {
         MoveGenerator movegen = new MoveGenerator();
-        long threats = movegen.calculateThreats(ENGINE.getBoard(), !ENGINE.getBoard().isWhite());
-        Bits.print(threats);
+        //long threats = movegen.calculateThreats(ENGINE.getBoard(), !ENGINE.getBoard().isWhite());
+        //Bits.print(threats);
     }
 
     public static void handleParams(UCICommand command) {

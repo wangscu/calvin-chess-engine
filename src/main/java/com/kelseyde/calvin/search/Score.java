@@ -68,14 +68,15 @@ public class Score {
     }
 
     public static boolean isInsufficientMaterial(Board board) {
-        if (board.getPawns() != 0 || board.getRooks() != 0 || board.getQueens() != 0) {
+/*        if (board.getPawns() != 0 || board.getRooks() != 0 || board.getQueens() != 0) {
             return false;
         }
         long whitePieces = board.getKnights(true) | board.getBishops(true);
         long blackPieces = board.getKnights(false) |  board.getBishops(false);
 
         return (Bits.count(whitePieces) == 0 || Bits.count(whitePieces) == 1)
-                && (Bits.count(blackPieces) == 0 || Bits.count(blackPieces) == 1);
+                && (Bits.count(blackPieces) == 0 || Bits.count(blackPieces) == 1);*/
+        return false;
     }
 
     public static boolean isFiftyMoveRule(Board board) {

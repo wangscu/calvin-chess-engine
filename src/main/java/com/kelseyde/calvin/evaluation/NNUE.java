@@ -132,7 +132,7 @@ public class NNUE {
             for (int pieceIndex = 0; pieceIndex < Piece.COUNT; pieceIndex++) {
 
                 Piece piece = Piece.values()[pieceIndex];
-                long[] pieces = board.getPieces(piece, white);
+/*                long[] pieces = board.getPieces(piece, white);
                 long cachedPieces = cacheEntry.bitboards[pieceIndex] & cacheEntry.bitboards[Piece.COUNT + colourIndex];
 
                 // Calculate which pieces need to be added and removed from the accumulator.
@@ -148,7 +148,7 @@ public class NNUE {
                     int square = Bits.next(removed);
                     subs[subIndex++] = new Feature(piece, square, white);
                     removed = Bits.pop(removed);
-                }
+                }*/
 
             }
         }

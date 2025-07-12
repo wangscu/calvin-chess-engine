@@ -137,6 +137,13 @@ public class Bits {
     }
 
     /**
+     * 两个位图数组进行异或操作
+     */
+    public static long[] xor(long[] a, long[] b) {
+        return new long[]{a[0] ^ b[0], a[1] ^ b[1]};
+    }
+
+    /**
      * 创建空位图数组
      */
     public static long[] emptyBitBoard() {
@@ -154,13 +161,6 @@ public class Bits {
             result[1] = 1L << (square - 64);
         }
         return result;
-    }
-
-    /**
-     * 两个位图数组进行异或操作
-     */
-    public static long[] xor(long[] a, long[] b) {
-        return new long[]{a[0] ^ b[0], a[1] ^ b[1]};
     }
 
     /**

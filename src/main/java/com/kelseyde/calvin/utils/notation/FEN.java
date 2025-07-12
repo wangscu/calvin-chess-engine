@@ -28,7 +28,7 @@ public record FEN(String value,
                   int halfMoveClock,
                   int fullMoveNumber) {
 
-    public static final String STARTPOS = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+    public static final String STARTPOS = "rnbakabnr/9/1c5c1/p1p1p1p1p/9/9/P1P1P1P1P/1C5C1/9/RNBKABNBR w - - 0 1";
 
     public static FEN startpos() {
         return FEN.parse(FEN.STARTPOS);
@@ -51,7 +51,7 @@ public record FEN(String value,
         String board = parts[0];
 
         int slashCount = (int) board.chars().filter(ch -> ch == '/').count();
-        if (slashCount != 7)
+        if (slashCount != 9)
             throw new InvalidFenException("Invalid number of ranks", fen);
 
         String[] ranks = board.split("/");
@@ -69,7 +69,7 @@ public record FEN(String value,
                     squareCount += 1;
             }
 
-            if (squareCount != 8) {
+            if (squareCount != 9) {
                 if (squareCount > 8)
                     throw new InvalidFenException("Rank has too many pieces", fen);
                 else
@@ -115,7 +115,7 @@ public record FEN(String value,
         calculatePiecePositions(board, bitboards, pieces);
         int enPassantFile = parseEnPassantFile(enPassant);
         boolean whiteToMove = turn.equals("w");
-        int castleRights = parseCastlingRights(castle, bitboards);
+        int castleRights = 0;
         int halfMoveClock = Integer.parseInt(halfMove);
         int fullMoveNumber = Integer.parseInt(fullMove);
 
@@ -157,8 +157,8 @@ public record FEN(String value,
                             sb.append(emptySquares);
                             emptySquares = 0;
                         }
-                        long squareBB = Bits.of(square);
-                        boolean white = (board.getWhitePieces() & squareBB) != 0;
+                        long[] squareBB = Bits.of(square);
+                        boolean white = !Bits.isEmpty(Bits.and(board.getWhitePieces(), squareBB));
                         String pieceCode = piece.code();
                         if (white) pieceCode = pieceCode.toUpperCase();
                         sb.append(pieceCode);
@@ -198,7 +198,7 @@ public record FEN(String value,
         return value;
     }
 
-    private static void calculatePiecePositions(String boardString, long[] bitboards, Piece[] pieces) {
+    private static void calculatePiecePositions(String boardString, long[][] bitboards, Piece[] pieces) {
 
         String[] files = boardString.split("/");
         List<List<String>> rankFileHash = Arrays.stream(files)
@@ -242,82 +242,19 @@ public record FEN(String value,
         return isLetter ? Stream.of(square) : IntStream.range(0, Integer.parseInt(square)).mapToObj(i -> "x");
     }
 
-    private static int parseCastlingRights(String castlingRights, long[] bitboards) {
-
-        long whiteRooks = bitboards[Piece.ROOK.index()] & bitboards[Piece.WHITE_PIECES];
-        long blackRooks = bitboards[Piece.ROOK.index()] & bitboards[Piece.BLACK_PIECES];
-        int whiteKing = Bits.next(bitboards[Piece.KING.index()] & bitboards[Piece.WHITE_PIECES]);
-        int blackKing = Bits.next(bitboards[Piece.KING.index()] & bitboards[Piece.BLACK_PIECES]);
-
-        int rights = Castling.empty();
-        for (int i = 0; i < castlingRights.length(); i++) {
-            char right = castlingRights.charAt(i);
-            switch (right) {
-                case 'K' -> rights = Castling.setRook(rights, true, true, findRook(whiteRooks, true, true));
-                case 'Q' -> rights = Castling.setRook(rights, false, true, findRook(whiteRooks, true, false));
-                case 'k' -> rights = Castling.setRook(rights, true, false, findRook(blackRooks, false, true));
-                case 'q' -> rights = Castling.setRook(rights, false, false, findRook(blackRooks, false, false));
-                case 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H' -> {
-                    // Shredder FEN: White rooks on specified files
-                    int file = File.fromNotation(right);
-                    int kingFile = File.of(whiteKing);
-                    if (file < kingFile) {
-                        rights = Castling.setRook(rights, false, true, Square.of(0, file)); // Queenside
-                    } else {
-                        rights = Castling.setRook(rights, true, true, Square.of(0, file));  // Kingside
-                    }
-                }
-                case 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h' -> {
-                    // Shredder FEN: Black rooks on specified files
-                    int file = File.fromNotation(Character.toUpperCase(right));
-                    int kingFile = File.of(blackKing);
-                    if (file < kingFile) {
-                        rights = Castling.setRook(rights, false, false, Square.of(7, file)); // Queenside
-                    } else {
-                        rights = Castling.setRook(rights, true, false, Square.of(7, file));  // Kingside
-                    }
-                }
-                case '-' -> {
-                    // No castling rights, so return empty rights directly
-                    return Castling.empty();
-                }
-                default -> throw new InvalidFenException("Invalid castling right! " + right);
-            }
-        }
-        return rights;
-    }
-
-    private static int findRook(long rooks, boolean white, boolean kingside) {
-
-        long firstRank = white ? Bits.Rank.FIRST : Bits.Rank.EIGHTH;
-        long firstRankRooks = rooks & firstRank;
-
-        if (Bits.count(firstRankRooks) == 0)
-            throw new InvalidFenException("Castling rights with no rooks on the first rank!");
-
-        if (Bits.count(firstRankRooks) == 1)
-            return Bits.next(firstRankRooks);
-
-        List<Integer> squares = Arrays.stream(Bits.collect(firstRankRooks))
-                .boxed()
-                .sorted(Comparator.comparing(File::of))
-                .toList();
-
-        return kingside ? squares.get(squares.size() - 1) : squares.get(0);
-
-    }
-
     private static Optional<Piece> parsePiece(String code) {
         return Arrays.stream(Piece.values())
                 .filter(piece -> piece.code().equalsIgnoreCase(code))
                 .findAny();
     }
 
-    private static void updatePiecePosition(long[] bbs, Piece[] pcs, int square, Piece piece, boolean white) {
+    private static void updatePiecePosition(long[][] bbs, Piece[] pcs, int square, Piece piece, boolean white) {
         int pieceIndex = piece.index();
         int colourIndex = Piece.COUNT + Colour.index(white);
-        bbs[pieceIndex] |= Bits.of(square);
-        bbs[colourIndex] |= Bits.of(square);
+        //bbs[pieceIndex] |= Bits.of(square);
+        bbs[pieceIndex] = Bits.or(bbs[pieceIndex], Bits.of(square));
+        //bbs[colourIndex] |= Bits.of(square);
+        bbs[colourIndex] = Bits.or(bbs[colourIndex], Bits.of(square));
         pcs[square] = piece;
     }
 
@@ -366,7 +303,7 @@ public record FEN(String value,
     }
 
     private static class FenPatterns {
-        public static final Pattern BOARD       = Pattern.compile("^([rnbqkpRNBQKP1-8]+/){7}[rnbqkpRNBQKP1-8]+$");
+        public static final Pattern BOARD       = Pattern.compile("^([rnbakpcRNBAKPC1-9]+/){9}[rnbakpcRNBAKPC1-9]+$");
         public static final Pattern RANK        = Pattern.compile(".*\\d{2,}.*");
         public static final Pattern TURN        = Pattern.compile("^[wb]$");
         public static final Pattern CASTLE      = Pattern.compile("^(-|[A-HKQ]*[a-hkq]*)$");

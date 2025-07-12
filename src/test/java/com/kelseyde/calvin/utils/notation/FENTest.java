@@ -2,6 +2,8 @@ package com.kelseyde.calvin.utils.notation;
 
 import com.kelseyde.calvin.board.Board;
 import com.kelseyde.calvin.utils.notation.FEN.InvalidFenException;
+
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -12,6 +14,12 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class FENTest {
+
+    @Test
+    public void testStart() {
+        FEN fen = FEN.parse(FEN.STARTPOS);
+        Assertions.assertNotNull(fen);
+    }
 
     @Test
     public void testNull() {

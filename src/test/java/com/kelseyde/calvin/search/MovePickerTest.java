@@ -3,6 +3,7 @@ package com.kelseyde.calvin.search;
 import com.kelseyde.calvin.board.Board;
 import com.kelseyde.calvin.board.Move;
 import com.kelseyde.calvin.movegen.MoveGenerator;
+import com.kelseyde.calvin.movegen.MoveGenerator.MoveFilter;
 import com.kelseyde.calvin.search.ordering.ScoredMove;
 import com.kelseyde.calvin.search.ordering.StandardMovePicker;
 import com.kelseyde.calvin.utils.Bench;
@@ -23,7 +24,7 @@ public class MovePickerTest {
         for (String fen : Bench.FENS) {
             Board board = FEN.parse(fen).toBoard();
             Assertions.assertEquals(TestUtils.MOVEGEN.generateMoves(board).size(),
-                            TestUtils.MOVEGEN.generateMoves(board, MoveGenerator.MoveFilter.NOISY).size() +
+                            TestUtils.MOVEGEN.generateMoves(board, MoveFilter.ALL).size() +
                             TestUtils.MOVEGEN.generateMoves(board, MoveGenerator.MoveFilter.QUIET).size());
         }
 
