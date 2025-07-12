@@ -40,7 +40,7 @@ public class QuiescentMovePicker extends MovePicker {
     public ScoredMove next() {
 
         ScoredMove nextMove = null;
-        MoveFilter filter = inCheck ? MoveFilter.ALL : MoveFilter.CAPTURES_ONLY;
+        MoveFilter filter = inCheck ? MoveFilter.ALL : MoveFilter.CAPTURES;
         while (nextMove == null) {
             nextMove = switch (stage) {
                 case TT_MOVE -> pickTTMove(Stage.QSEARCH_GEN_NOISY);

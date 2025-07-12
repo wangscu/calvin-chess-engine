@@ -1,12 +1,12 @@
 package com.kelseyde.calvin.board;
 
+import java.util.Arrays;
+
 import com.kelseyde.calvin.board.Bits.File;
 import com.kelseyde.calvin.board.Bits.Square;
 import com.kelseyde.calvin.search.Search;
 import com.kelseyde.calvin.uci.UCI;
 import com.kelseyde.calvin.utils.notation.FEN;
-
-import java.util.Arrays;
 
 /**
  * Represents the current state of the chess board, including the positions of the pieces, the side to move, en passant
@@ -18,7 +18,7 @@ import java.util.Arrays;
  */
 public class Board {
 
-    private long[] bitboards;
+    private long[][] bitboards;
     private Piece[] pieces;
     private BoardState state;
     private BoardState[] states;
@@ -27,7 +27,7 @@ public class Board {
     private int ply;
 
     public Board() {
-        this.bitboards   = new long[Piece.COUNT + 2];
+        this.bitboards   = new long[Piece.COUNT + 2][2];
         this.pieces      = new Piece[Square.COUNT];
         this.moves       = new Move[Search.MAX_DEPTH];
         this.states      = new BoardState[Search.MAX_DEPTH];
@@ -314,21 +314,33 @@ public class Board {
     }
 
     public void updateBitboards(int from, int to, Piece piece, boolean white) {
-        long toggleMask = Bits.of(from) | Bits.of(to);
+        long[] toggleMask =Bits.or(Bits.of(from), Bits.of(to));
         toggle(toggleMask, piece, white);
     }
 
     public void updateBitboard(int square, Piece piece, boolean white) {
-        long toggleMask = Bits.of(square);
+        long[] toggleMask = Bits.of(square);
         toggle(toggleMask, piece, white);
     }
 
-    private void toggle(long mask, Piece type, boolean white) {
+    /**
+     * 中国象棋版本的toggle方法，支持long[2]表示90格棋盘
+     * @param mask 要切换的位置掩码，long[2]格式
+     * @param type 棋子类型
+     * @param white 是否为白方（红方）
+     */
+    private void toggle(long[] mask, Piece type, boolean white) {
         int pieceIndex = type.index();
-        bitboards[pieceIndex] ^= mask;
+        // 对特定棋子类型的位板进行异或操作
+        bitboards[pieceIndex][0] ^= mask[0];
+        bitboards[pieceIndex][1] ^= mask[1];
+
+        // 对特定颜色的位板进行异或操作
         int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        bitboards[colourIndex] ^= mask;
+        bitboards[colourIndex][0] ^= mask[0];
+        bitboards[colourIndex][1] ^= mask[1];
     }
+
 
     private void updateKeys(int from, int to, Piece piece, boolean white) {
         long hash = Key.piece(from, to, piece, white);
@@ -361,7 +373,7 @@ public class Board {
         pieces[square] = piece;
     }
 
-    public void removeKing(boolean white) {
+/*    public void removeKing(boolean white) {
         int pieceIndex = Piece.KING.index;
         int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
         long toggleMask = bitboards[pieceIndex] & bitboards[colourIndex];
@@ -375,7 +387,7 @@ public class Board {
         int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
         bitboards[pieceIndex] |= toggleMask;
         bitboards[colourIndex] |= toggleMask;
-    }
+    }*/
 
     private int updateCastleRights(int from, int to, Piece pieceType) {
         int newRights = state.getRights();
@@ -429,90 +441,102 @@ public class Board {
         return !move.isPromotion() && !isCapture(move);
     }
 
-    public long us() {
+    public long[] us() {
         return bitboards[white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES];
     }
 
-    public long them() {
+    public long[] them() {
         return bitboards[white ? Piece.BLACK_PIECES : Piece.WHITE_PIECES];
     }
 
-    public long our(Piece piece) {
-        return bitboards[piece.index] & us();
+    public long[] our(Piece piece) {
+        return Bits.and(bitboards[piece.index], us());
     }
 
-    public long their(Piece piece) {
-        return bitboards[piece.index] & them();
+    public long[] their(Piece piece) {
+        return Bits.and(bitboards[piece.index], them());
     }
 
-    public long getPawns(boolean white) {
+    public long[] getPawns(boolean white) {
         int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        return bitboards[Piece.PAWN.index] & bitboards[colourIndex];
+        return Bits.and(bitboards[Piece.PAWN.index], bitboards[colourIndex]);
     }
 
-    public long getKnights(boolean white) {
+    public long[] getKnights(boolean white) {
         int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        return bitboards[Piece.KNIGHT.index] & bitboards[colourIndex];
+        return Bits.and(bitboards[Piece.KNIGHT.index], bitboards[colourIndex]);
     }
 
-    public long getBishops(boolean white) {
+    public long[] getBishops(boolean white) {
         int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        return bitboards[Piece.BISHOP.index] & bitboards[colourIndex];
+        return Bits.and(bitboards[Piece.BISHOP.index], bitboards[colourIndex]);
     }
 
-    public long getRooks(boolean white) {int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        return bitboards[Piece.ROOK.index] & bitboards[colourIndex];
+    public long[] getRooks(boolean white) {
+        int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
+        return Bits.and(bitboards[Piece.ROOK.index], bitboards[colourIndex]);
     }
 
-    public long getQueens(boolean white) {int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        return bitboards[Piece.QUEEN.index] & bitboards[colourIndex];
+    public long[] getAdvisors(boolean white) {
+        int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
+        return Bits.and(bitboards[Piece.ADVISOR.index], bitboards[colourIndex]);
     }
 
-    public long getKing(boolean white) {int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
-        return bitboards[Piece.KING.index] & bitboards[colourIndex];
+    public long[] getCannons(boolean white) {
+        int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
+        return Bits.and(bitboards[Piece.CANNON.index], bitboards[colourIndex]);
     }
 
-    public long getPieces(boolean white) {
+    public long[] getKing(boolean white) {
+        int colourIndex = white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES;
+        return Bits.and(bitboards[Piece.KING.index], bitboards[colourIndex]);
+    }
+
+    public long[] getPieces(boolean white) {
         return bitboards[white ? Piece.WHITE_PIECES : Piece.BLACK_PIECES];
     }
 
-    public long[] getBitboards() {
+    public long[][] getBitboards() {
         return bitboards;
     }
 
-    public void setPawns(long pawns) {
+    public void setPawns(long[] pawns) {
         this.bitboards[Piece.PAWN.index] = pawns;
     }
 
-    public void setKnights(long knights) {
+    public void setKnights(long[] knights) {
         this.bitboards[Piece.KNIGHT.index] = knights;
     }
 
-    public void setBishops(long bishops) {
+    public void setBishops(long[] bishops) {
         this.bitboards[Piece.BISHOP.index] = bishops;
     }
 
-    public void setRooks(long rooks) {
+    public void setRooks(long[] rooks) {
         this.bitboards[Piece.ROOK.index] = rooks;
     }
 
-    public void setQueens(long queens) {
-        this.bitboards[Piece.QUEEN.index] = queens;
+    public void setAdvisors(long[] queens) {
+        this.bitboards[Piece.ADVISOR.index] = queens;
     }
 
-    public void setKings(long kings) {
+    public void setCannons(long[] queens) {
+        this.bitboards[Piece.CANNON.index] = queens;
+    }
+
+    public void setKings(long[] kings) {
         this.bitboards[Piece.KING.index] = kings;
     }
 
-    public void setWhitePieces(long whitePieces) {
+    public void setWhitePieces(long[] whitePieces) {
         this.bitboards[Piece.WHITE_PIECES] = whitePieces;
     }
 
-    public void setBlackPieces(long blackPieces) {
+    public void setBlackPieces(long[] blackPieces) {
         this.bitboards[Piece.BLACK_PIECES] = blackPieces;
     }
 
-    public void setBitboards(long[] bitboards) {
+    public void setBitboards(long[][] bitboards) {
         this.bitboards = bitboards;
     }
 
@@ -536,40 +560,43 @@ public class Board {
         this.moves = moves;
     }
 
-    public long getPawns() {
+    public long[] getPawns() {
         return bitboards[Piece.PAWN.index];
     }
 
-    public long getKnights() {
+    public long[] getKnights() {
         return bitboards[Piece.KNIGHT.index];
     }
 
-    public long getBishops() {
+    public long[] getBishops() {
         return bitboards[Piece.BISHOP.index];
     }
 
-    public long getRooks() {
+    public long[] getRooks() {
         return bitboards[Piece.ROOK.index];
     }
 
-    public long getQueens() {
-        return bitboards[Piece.QUEEN.index];
+    public long[] getCannons() {
+        return bitboards[Piece.CANNON.index];
+    }
+    public long[] getAdvisors() {
+        return bitboards[Piece.ADVISOR.index];
     }
 
-    public long getKings() {
+    public long[] getKings() {
         return bitboards[Piece.KING.index];
     }
 
-    public long getWhitePieces() {
+    public long[] getWhitePieces() {
         return bitboards[Piece.WHITE_PIECES];
     }
 
-    public long getBlackPieces() {
+    public long[] getBlackPieces() {
         return bitboards[Piece.BLACK_PIECES];
     }
 
-    public long getOccupied() {
-        return bitboards[Piece.WHITE_PIECES] | bitboards[Piece.BLACK_PIECES];
+    public long[] getOccupied() {
+        return Bits.or(bitboards[Piece.WHITE_PIECES], bitboards[Piece.BLACK_PIECES]);
     }
 
     public Piece[] getPieces() {
@@ -608,26 +635,35 @@ public class Board {
         return state.nonPawnKeys;
     }
 
+    /**
+     * 获取指定颜色方国王的位置
+     * @param white true表示白方,false表示黑方
+     * @return 返回国王所在的格子索引
+     */
     public int kingSquare(boolean white) {
-        long kings = getKing(white);
-        long pieces = getPieces(white);
-        return Bits.next(kings & pieces);
+        // 获取指定颜色的国王位棋盘
+        long[] kings = getKing(white);
+        // 获取指定颜色的所有棋子位棋盘
+        long[] pieces = getPieces(white);
+        // 通过位运算找到国王所在位置并返回其索引
+        return Bits.next(Bits.and(kings, pieces));
     }
 
-    public long getPieces(Piece piece, boolean white) {
+    public long[] getPieces(Piece piece, boolean white) {
         return switch (piece) {
             case PAWN -> getPawns(white);
             case KNIGHT -> getKnights(white);
             case BISHOP -> getBishops(white);
             case ROOK -> getRooks(white);
-            case QUEEN -> getQueens(white);
+            case ADVISOR -> getAdvisors(white);
+            case CANNON -> getCannons(white);
             case KING -> getKing(white);
         };
     }
 
-    public boolean hasNonPawnMaterial() {
+/*    public boolean hasNonPawnMaterial() {
         return (our(Piece.KING) | our(Piece.PAWN)) != us();
-    }
+    }*/
 
     public static Board from(String fen) {
         return FEN.parse(fen).toBoard();
@@ -652,7 +688,8 @@ public class Board {
         newBoard.setKnights(this.getKnights());
         newBoard.setBishops(this.getBishops());
         newBoard.setRooks(this.getRooks());
-        newBoard.setQueens(this.getQueens());
+        newBoard.setAdvisors(this.getAdvisors());
+        newBoard.setCannons(this.getCannons());
         newBoard.setKings(this.getKings());
         newBoard.setWhitePieces(this.getWhitePieces());
         newBoard.setBlackPieces(this.getBlackPieces());
@@ -690,7 +727,7 @@ public class Board {
                     System.out.print(" |  ");
                     continue;
                 }
-                boolean white = (getWhitePieces() & Bits.of(sq)) != 0;
+                boolean white = Bits.isEmpty(Bits.and(getWhitePieces(), Bits.of(sq)));
                 System.out.print(" | " + (white ? piece.code().toUpperCase() : piece.code()));
             }
 
