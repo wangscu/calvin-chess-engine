@@ -45,7 +45,6 @@ public class MoveGenerator {
         // 获取当前行棋方
         white = board.isWhite();
 
-        // 按照C++代码的顺序依次生成各种棋子的移动
         generatePawnMoves(board);      // 兵/卒
         generateCannonMoves(board);    // 炮
         generateRookMoves(board);      // 车
@@ -127,13 +126,10 @@ public class MoveGenerator {
         long[] currentPawns = {pawns[0], pawns[1]};
         while (!Bits.isEmpty(currentPawns)) {
             int pawnSquare = Bits.next(currentPawns);
-
             // 获取该兵的所有可能移动位置
             long[] pawnAttacks = ChineseAttacks.getPawnAttacks(pawnSquare, white);
-
             // 生成该兵的所有移动
             generatePawnMovesFromSquare(board, pawnSquare, pawnAttacks, opponents, ourPieces);
-
             // 移除已处理的兵
             currentPawns = Bits.clearBit(currentPawns, pawnSquare);
         }
